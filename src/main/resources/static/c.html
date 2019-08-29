@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="js/jquery-3.4.1.min.js"></script>
+    <script src="/js/orm.js"></script>
+    <script>
+        // var sss="悟空,八戒,沙僧";
+        // var ppp="是啥,信息,啊啊";
+        // var s2=ppp.split(",");
+        // var s1=sss.split(",");
+        //
+        // $(function () {
+        //     var selec=document.getElementById("select1");
+        //     for(var t of s1){
+        //         var optiont=document.createElement("option");
+        //         optiont.appendChild(document.createTextNode(t));
+        //         selec.appendChild(optiont);
+        //     }
+        // $("#select1").dblclick(function () {
+        //     $("#select1 option:selected").remove();
+        // })
+        // });
+
+        $(function () {
+            var id = "111";
+            var name = "悟空";
+            document.getElementById("id").value = id;
+            document.getElementById("name").value = name;
+            var id1 = "333";
+            var name1 = "八戒";
+            document.getElementById("id1").value = id1;
+            document.getElementById("name1").value = name1;
+            var id2 = "222";
+            var name2 = "沙僧";
+            document.getElementById("id2").value = id2;
+            document.getElementById("name2").value = name2;
+        });
+    </script>
+</head>
+<body>
+<p>如果你点击“隐藏” 按钮，我将会消失。</p>
+<form role="form">
+    <div class="form-group">
+        <label for="name">可多选的选择列表</label>
+        <select multiple class="form-control" id="select1">
+        </select>
+    </div>
+</form>
+
+<form method="post" action="/main">
+    <input type="hidden" name="id" id="id1">
+    <input type="hidden" name="name" id="name1">
+    <button id="hide" type="submit">八戒</button>
+</form>
+<form method="post" action="/main">
+    <input type="hidden" name="id" id="id">
+    <input type="hidden" name="name" id="name">
+    <button type="submit">悟空</button>
+</form>
+<form method="post" action="/main">
+    <input type="hidden" name="id" id="id2">
+    <input type="hidden" name="name" id="name2">
+    <button type="submit">沙僧</button>
+</form>
+</body>
+</html>

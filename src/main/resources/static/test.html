@@ -1,0 +1,255 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+       
+    <meta charset="UTF-8">
+        <title>网上聊天室</title>
+       
+    <style>
+        select {
+            height: 500px;
+            width: 100px;
+            overflow: auto;
+
+        }
+
+        #message {
+            height: 500px;
+            width: 100%;
+            overflow: auto;
+        }
+
+        #message1 {
+            height: 500px;
+            width: 100%;
+            overflow: auto;
+        }
+
+        #message2 {
+            height: 200px;
+            width: 100%;
+            overflow: auto;
+        }
+
+            </style>
+    <!-- 引入bootstrap -->
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+    <!-- 引入JQuery  bootstrap.js-->
+    <script src="/js/jquery-3.4.1.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="JS/orm.js"></script>
+    <script th:inline="javascript">
+        var ob = {};
+        var toUser;
+        var url;
+        var onlineuser = "悟空,八戒,沙僧";
+        var offuser = "萨达,物色,阿萨辛";
+        var s1 = onlineuser.split(",");
+        var s2 = offuser.split(",");
+
+        $(function () {
+            $.get({
+                async: false, url: "/chat", success: function (data) {
+                    url = data;
+                }
+            })
+        });
+
+        $(function () {
+
+            ob.sldiv = document.getElementById("message");
+            ob.qfdiv = document.getElementById("message1");
+            ob.sysdiv = document.getElementById("message2");
+            ob.realdiv = "";
+            var sltxt = document.getElementById("sltxt");
+            $("#select1").dblclick(function () {
+                // $("#select1 option:selected").remove();
+                toUser = $("#select1 option:selected").val();
+                var lll = $("#select1 option:selected").text();
+                sltxt.setAttribute("placeholder", "你将发送信息给" + lll);
+            });
+            $("#select2").dblclick(function () {
+                // $("#select2 option:selected").remove();
+                toUser = $("#select2 option:selected").val();
+                sltxt.placeholder = "你将发送信息给" + $("#select2 option:selected").text();
+            });
+            conectWebSocket();
+            refonline();
+            refoffline();
+        });
+    </script>
+</head>
+<body>
+<div class="form-inline">
+    <div class="form-group">
+        在线用户:
+        <select multiple="multiple" class="form-control" id="select1"></select>
+    </div>
+    <div class="form-group">
+        离线用户:
+        <select multiple="multiple" class="form-control" id="select2"></select>
+    </div>
+    <div class="form-group" style="width: 30%">
+        私聊消息框:AND离线消息框:
+        <div id="message" class="form-control"></div>
+        <input class="form-control " id="sltxt" type="text" placeholder="请输入聊天信息" style="width: 571px">
+        <button class="btn btn-info btn-block" onclick="SLsend()">发送</button>
+    </div>
+    <div class="form-group" style="width: 30%">
+        聊天室:
+        <div id="message1" class="form-control"></div>
+        <input class="form-control" id="qftxt" type="text" placeholder="请输入聊天信息" style="width: 571px">
+        <button class="btn btn-info btn-block" onclick="QFsend()">发送</button>
+    </div>
+    <div class="form-group">
+        <button class="btn btn-danger" onclick="closeWebSocket()">退出</button>
+        <button class="btn btn-danger" onclick="refonline(),refoffline()">刷新</button>
+    </div>
+</div>
+系统消息:
+<div id="message2" class="form-control">Message</div>
+</body>
+<script type="text/javascript">
+    var websocket = null;
+    var selec1 = document.getElementById("select1");
+    var selec2 = document.getElementById("select2");
+
+
+    function conectWebSocket() {
+        var name = "[[${name}]]";
+        var id = "[[${id}]]";
+        //判断当前浏览器是否支持WebSocket
+        if ('WebSocket' in window) {
+            websocket = new WebSocket("ws://" + url + "/websocket/" + id + "/" + name);
+        } else {
+            alert('Not support websocket')
+        }
+
+        if (name === "") {
+            alert("请输入用户名");
+            return;
+        }
+        //连接发生错误的回调方法
+        websocket.onerror = function () {
+            setMessageSYSInnerHTML("error");
+        };
+        //连接成功建立的回调方法
+        websocket.onopen = function (event) {
+            setMessageSYSInnerHTML("Log MSG: 成功连接聊天服务器");
+        }
+        //接收到消息的回调方法
+        websocket.onmessage = function (event) {
+            ob.msg = event.data;
+            var w = judegeadreturn(ob);
+            if (w.realdiv === "message") {
+                setMessageSLInnerHTML(w.msg);
+            } else if (w.realdiv === "message1") {
+                setMessageQFInnerHTML(w.msg);
+            } else if (w.realdiv === "message2") {
+                setMessageSYSInnerHTML(w.msg);
+            } else return;
+
+        }
+        //连接关闭的回调方法
+        websocket.onclose = function () {
+            setMessageSYSInnerHTML("Log MSG:已退出聊天室");
+        }
+        //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+        window.onbeforeunload = function () {
+            websocket.close();
+        }
+    }
+
+    //将消息显示在网页上
+    function setMessageSLInnerHTML(innerHTML) {
+        document.getElementById('message').innerHTML += innerHTML + '<br/>';
+        var div = document.getElementById("message");
+        div.scrollTop = div.scrollHeight;
+
+    }
+
+    function setMessageQFInnerHTML(innerHTML) {
+        document.getElementById('message1').innerHTML += innerHTML + '<br/>';
+        var div = document.getElementById("message1");
+        div.scrollTop = div.scrollHeight;
+
+    }
+
+    function setMessageSYSInnerHTML(innerHTML) {
+        document.getElementById('message2').innerHTML += innerHTML + '<br/>';
+        var div = document.getElementById("message2");
+        div.scrollTop = div.scrollHeight;
+
+    }
+
+    //关闭连接
+    function closeWebSocket() {
+
+        websocket.close();
+    }
+
+    //发送消息
+    function SLsend() {
+        var message = document.getElementById('sltxt').value;
+        if (message == '') {
+            return;
+        } else if (message.indexOf("iuwjakx*)#&6546^dhsx%@219697") != -1 || message.indexOf("iuwjakx*)#&65:{xxadf46^dhsx%@219697") != -1 || message.indexOf("iuwjakx*)#&65+Wdsx_46^dhsx%@219697") != -1 || message.indexOf("ffiuwjakx*)#&65+Wdgbsx_46^dhsx%@219697(xasfa") != -1) {
+            document.getElementById("sltxt").value = "";
+            alert("输入内容含有非法字符，请重新输入");
+            return;
+        } else if (toUser == null) {
+            return;
+        }
+        var socketMsg = {msg: message, toUser: toUser};
+        socketMsg.type = 1;
+
+        websocket.send(JSON.stringify(socketMsg));
+        document.getElementById("sltxt").value = "";
+
+    }
+
+    function QFsend() {
+        var message = document.getElementById('qftxt').value;
+        if (message == '') {
+            return
+        } else if (message.indexOf("iuwjakx*)#&6546^dhsx%@219697") != -1 || message.indexOf("iuwjakx*)#&65:{xxadf46^dhsx%@219697") != -1 || message.indexOf("iuwjakx*)#&65+Wdsx_46^dhsx%@219697") != -1 || message.indexOf("ffiuwjakx*)#&65+Wdgbsx_46^dhsx%@219697(xasfa") != -1) {
+            document.getElementById("qftxt").value = "";
+            alert("输入内容含有非法字符，请重新输入");
+            return;
+        }
+
+        var socketMsg = {msg: message, toUser: toUser};
+        socketMsg.type = 0;
+        websocket.send(JSON.stringify(socketMsg));
+        document.getElementById("qftxt").value = "";
+    }
+
+    function refonline() {
+        selec1.options.length = 0;
+        var txt
+        $.get({
+            async: false, url: "/refonline", success: function (data) {
+                txt = jQuery.parseJSON(data);
+            }
+        });
+        $.each(txt, function (key, value) {
+            selec1.options.add(new Option(value, key));
+        });
+
+
+    }
+
+    function refoffline() {
+        selec2.options.length = 0;
+        var txt
+        $.get({
+            async: false, url: "/refoffline", success: function (data) {
+                txt = jQuery.parseJSON(data);
+            }
+        });
+        $.each(txt, function (key, value) {
+            selec2.options.add(new Option(value, key));
+        });
+    }
+</script>
+</html>
