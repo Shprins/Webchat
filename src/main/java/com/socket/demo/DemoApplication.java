@@ -13,7 +13,7 @@ public class DemoApplication {
     public static void main(String[] args) {
         SpringApplication.run(DemoApplication.class, args);
         Constant.setUrl("192.168.10.185:8005");
-        Dbconstant.setDbrecord(false);
+        Dbconstant.setDbrecord(true);
         Dbconstant.setUsername("root");
         Dbconstant.setPassword("1234567");
         Dbconstant.setDriverClassName("com.mysql.jdbc.Driver");
